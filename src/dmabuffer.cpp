@@ -91,7 +91,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
       return false;
    }
 
-   buf = (uint16_t *) mmap(NULL, buf_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+   buf = (uint8_t *) mmap(NULL, buf_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
    sync_mode = 1;
 
    return true;
