@@ -18,7 +18,7 @@ This library provides C/C++ classes to handle DMA transfers. User DMA buffers im
 
 DMACtrl dmac(AXI_DMA_BASEADDR);
 DMABuffer dbuf;
-unsigned short int *bufusint;
+uint16_t *bufusint;
 
 // open and initialize udmabuf
 if(!dbuf.open("udmabuf0", true)) {
@@ -28,7 +28,7 @@ if(!dbuf.open("udmabuf0", true)) {
 memset(dbuf.buf, 0, dbuf.size());
 
 // local buffer pointer to udmabuf (16 bit words)
-bufusint = reinterpret_cast<unsigned short int*>(dbuf.buf);
+bufusint = reinterpret_cast<uint16_t *>(dbuf.buf);
 
 // set DMA channel RX (S2MM)
 dmac.setChannel(DMACtrl::Channel::S2MM);
@@ -48,7 +48,7 @@ while(!dmac.isIdle()) {
    if(dmac.rx()) { 
 
       // dump buffer on screen
-      for(int i=0; i<RXSIZE/2; i++)
+      for(uint16_t i=0; i<RXSIZE/2; i++)
          fmt::print("{:04X} ", bufusint[i]);
       fmt::print("\n"); 
    }
