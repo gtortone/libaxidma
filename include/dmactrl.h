@@ -122,7 +122,7 @@ private:
    unsigned int getMem(volatile unsigned int *mem_address, int offset);
    void initSGDescriptors(void);
    void calibrateWaitTime(unsigned int count);
-   long int getBufferAddress(int desc);
+   long int getBufferAddress(unsigned int desc);
 
    /* Direct DMA methods */
    void runDirect(void);

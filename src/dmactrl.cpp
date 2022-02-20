@@ -87,11 +87,13 @@ unsigned int DMACtrl::getRegister(int offset) {
 /**
  * @brief Halt AXI DMA controller
  *
+ * @throws runtime_error if DMA channel is not set
+ *
  */
 void DMACtrl::halt(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    setRegister(regs["DMACR"], 0);
 }
@@ -99,11 +101,12 @@ void DMACtrl::halt(void) {
 /**
  * @brief Reset AXI DMA controller
  *
+ * @throws runtime_error if DMA channel is not set
  */
 void DMACtrl::reset(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    setRegister(regs["DMACR"], 4);
 }
@@ -126,12 +129,14 @@ void DMACtrl::run(void) {
  * @return true: DMA is idle
  * @return false: DMA is not idle
  *
+ * @throws runtime_error if DMA channel is not set
+ *
  * @note After a successful DMA transfer idle flag reports end of transfer
  */
 bool DMACtrl::isIdle(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    return( getRegister(regs["DMASR"]) & 0x0002 );
 }
@@ -141,11 +146,13 @@ bool DMACtrl::isIdle(void) {
  *
  * @return true: DMA is running
  * @return false: DMA is not running
+ *
+ * @throws runtime_error if DMA channel is not set
  */
 bool DMACtrl::isRunning(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    return( ~(getRegister(regs["DMASR"]) & 0x0001) );
 }
@@ -155,11 +162,13 @@ bool DMACtrl::isRunning(void) {
  *
  * @return true: scatter-gather engine is included
  * @return false: scatter-gather engine is not included (direct mode)
+ *
+ * @throws runtime_error if DMA channel is not set
  */
 bool DMACtrl::isSG(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    return( getRegister(regs["DMASR"]) & 0x0008 );
 }
@@ -189,11 +198,12 @@ unsigned int DMACtrl::getMem(volatile unsigned int *mem_address, int offset) {
 /**
  * @brief Print status of DMA channel (DMASR register)
  *
+ * @throws runtime_error if DMA channel is not set
  */
 void DMACtrl::getStatus(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    unsigned int status = getRegister(regs["DMASR"]);
 
@@ -225,22 +235,26 @@ void DMACtrl::getStatus(void) {
  *
  * @return true: IRQioc is triggered
  * @return false: IRQioc is not triggered
+ *
+ * @throws runtime_error if DMA channel is not set
  */
 bool DMACtrl::IRQioc(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    return( getRegister(regs["DMASR"]) & (1<<12) );
 }
 
 /**
  * @brief Clear IRQioc (IRQ I/O completed) status of DMA channel (DMASR register)
+ *
+ * @throws runtime_error if DMA channel is not set
  */
 void DMACtrl::clearIRQioc(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    unsigned int status = getRegister(regs["DMASR"]);
    setRegister(regs["DMASR"], status & ~(1<<12));
@@ -250,10 +264,16 @@ void DMACtrl::clearIRQioc(void) {
  * @brief Get starting address of the buffer space related to a block descriptor
  *
  * @param desc descriptor number
+ *
  * @return address 
+ *
+ * @throws runtime_error descriptor index is out of bound
  */
-long int DMACtrl::getBufferAddress(int desc) {
-   // check desc < ndesc
+long int DMACtrl::getBufferAddress(unsigned int desc) {
+
+   if(desc > ndesc-1)
+      throw std::runtime_error(std::string(__func__) + ": descriptor is out of bound");
+
    return ( getMem(bdmem, BUFFER_ADDRESS + (DESC_SIZE * desc)) );
 }
 
@@ -262,20 +282,21 @@ long int DMACtrl::getBufferAddress(int desc) {
  *
  * @param blocksize size of DMA transfer (packet size)
  * @param addr PS source/destination address for DMA transfer
+ *
+ * @throws runtime_error if DMA channel is not set 
+ * @throws runtime_error if DMA channel is not configured for direct mode
+ *
  */
 void DMACtrl::initDirect(unsigned int blocksize, unsigned int addr) {
 
-   if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
-
    if(isSG())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not configured for Direct mode");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not configured for Direct mode");
 
    if(channel == S2MM)
       setRegister(regs["DESTINATION_ADDRESS"], addr);
    else if(channel == MM2S)
       setRegister(regs["START_ADDRESS"], addr);
-   else throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+   else throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    size = blocksize;
 
@@ -289,14 +310,17 @@ void DMACtrl::initDirect(unsigned int blocksize, unsigned int addr) {
 
 /**
  * @brief Start DMA channel direct mode data transfer
+ *
+ * @throws runtime_error if DMA channel is not set
+ * @throws runtime_error if DMA channel is not configured for direct mode
  */
 void DMACtrl::runDirect(void) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    if(isSG())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not configured for Direct mode");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not configured for Direct mode");
 
    setRegister(regs["LENGTH"], size);
 }
@@ -308,14 +332,17 @@ void DMACtrl::runDirect(void) {
  * @param n number of block descriptors to initialize
  * @param blocksize size of DMA transfer (packet size)
  * @param tgtaddr PS source/destination address for DMA transfer
+ *
+ * @throws runtime_error if DMA channel is not set
+ * @throws runtime_error if DMA channel is not configured for scatter gather mode
  */
 void DMACtrl::initSG(unsigned int baseaddr, int n, unsigned int blocksize, unsigned int tgtaddr) {
 
    if(channel == UNKNOWN)
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not set");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not set");
 
    if(!isSG())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not configured for Scatter-Gather mode");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not configured for Scatter-Gather mode");
 
    bdmem = (unsigned int *) mmap(NULL, n * DESC_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, dh, baseaddr);
    descaddr = baseaddr;
@@ -328,11 +355,13 @@ void DMACtrl::initSG(unsigned int baseaddr, int n, unsigned int blocksize, unsig
 
 /**
  * @brief Start DMA channel scatter-gather mode data transfer
+ *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
  */
 void DMACtrl::runSG(void) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    // start channel with complete interrupt and cyclic mode
    setRegister(regs["DMACR"], (ndesc << 16) + 0x1011);
@@ -379,11 +408,13 @@ void DMACtrl::initSGDescriptors(void) {
  * @brief Increment with packet size a buffer address of block descriptor
  *
  * @param desc block descriptor index
+ *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
  */
 void DMACtrl::incSGDescTable(int desc) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    for(unsigned int i=0; i<ndesc; i++)
       setMem(bdmem, BUFFER_ADDRESS + (DESC_SIZE * i), targetaddr + (size * (ndesc * desc + i)));
@@ -391,11 +422,13 @@ void DMACtrl::incSGDescTable(int desc) {
 
 /**
  * @brief Print block descriptor table
+ *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
  */
 void DMACtrl::dumpSGDescTable(void) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    for(unsigned int i=0; i<ndesc; i++) {
       unsigned int bdaddr = descaddr + (DESC_SIZE * i);
@@ -410,11 +443,13 @@ void DMACtrl::dumpSGDescTable(void) {
 
 /**
  * @brief Print block descriptors status register
+ *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
  */
 void DMACtrl::dumpSGDescAllStatus(void) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    for(unsigned int i=0; i<ndesc; i++) {
       unsigned int status = getMem(bdmem, STATUS + (DESC_SIZE * i));
@@ -425,12 +460,14 @@ void DMACtrl::dumpSGDescAllStatus(void) {
 /**
  * @brief Clear status register of all block descriptors
  *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
+ *
  * @note This method must be used when cyclic mode is not enabled
  */
 void DMACtrl::clearSGDescAllStatus(void) {
    
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    for(unsigned int i=0; i<ndesc; i++)
       setMem(bdmem, STATUS + (DESC_SIZE * i), 0);
@@ -441,11 +478,13 @@ void DMACtrl::clearSGDescAllStatus(void) {
  *
  * @param desc block descriptor index
  * @return buffer address
+ *
+ * @throws runtime_error if DMA channel in scatter-gather mode is not initialized
  */
 long int DMACtrl::getSGDescBufferAddress(int desc) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    return ( getMem(bdmem, BUFFER_ADDRESS + (DESC_SIZE * desc)) );
 }
@@ -520,11 +559,15 @@ bool DMACtrl::rx(unsigned int timeout) {
  *
  * @return true: data transfer completed
  * @return false: timeout expired
+ *
+ * @throws runtime_error if DMA channel is not configured for direct mode
+ * @throws runtime_error if DMA channel is not S2MM
+ * @throws runtime_error if DMA channel is not running
  */
 bool DMACtrl::directRx(unsigned int timeout) {
    
    if(isSG())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not configured for Direct mode");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not configured for Direct mode");
 
    if(channel != S2MM)
       throw std::runtime_error(std::string(__func__) + ": DMA Scatter-Gather channel != S2MM");
@@ -578,13 +621,13 @@ bool DMACtrl::directRx(unsigned int timeout) {
 bool DMACtrl::blockRx(unsigned int timeout) {
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    if(channel != S2MM)
       throw std::runtime_error(std::string(__func__) + ": DMA Scatter-Gather channel != S2MM");
 
    if(!isRunning())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not running");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not running");
 
    int nloops = 0;
    unsigned int waitTime = 0;
@@ -666,19 +709,23 @@ bool DMACtrl::blockRx(unsigned int timeout) {
  *
  * @return true: data transfer completed
  * @return false: timeout expired
+ *
+ * @throws runtime_error if DMA channel is not initialized
+ * @throws runtime_error if DMA channel is not S2MM
+ * @throws runtime_error if DMA channel is not running
  */
 bool DMACtrl::bufferRx(unsigned int timeout) {
 
    // timout: 0=infinite
 
    if(!initsg)
-      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather not initialized");
+      throw std::runtime_error(std::string(__func__) + ": Scatter-Gather is not initialized");
 
    if(channel != S2MM)
       throw std::runtime_error(std::string(__func__) + ": DMA Scatter-Gather channel != S2MM");
 
    if(!isRunning())
-      throw std::runtime_error(std::string(__func__) + ": DMA channel not running");
+      throw std::runtime_error(std::string(__func__) + ": DMA channel is not running");
 
    int nloops = 0;
    unsigned int waitTime = 0;
