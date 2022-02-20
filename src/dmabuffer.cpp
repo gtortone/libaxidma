@@ -2,6 +2,7 @@
 #include <vector>
 #include <fcntl.h>      // open
 #include <unistd.h>     // close
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <fmt/core.h>
@@ -90,7 +91,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
       return false;
    }
 
-   buf = (unsigned char *) mmap(NULL, buf_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+   buf = (uint16_t *) mmap(NULL, buf_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
    sync_mode = 1;
 
    return true;
@@ -122,7 +123,7 @@ bool DMABuffer::close(void) {
  * @return true: set sync area success
  * @return false: set sync area failure
  */
-bool DMABuffer::setSyncArea(unsigned int offset, unsigned int size, unsigned int direction) {
+bool DMABuffer::setSyncArea(uint32_t offset, uint32_t size, uint8_t direction) {
 
    std::string filename;
    std::fstream f;
@@ -165,7 +166,7 @@ bool DMABuffer::setSyncArea(unsigned int offset, unsigned int size, unsigned int
  * @return true: set buffer owner success
  * @return false: set buffer owner failure
  */
-bool DMABuffer::setBufferOwner(unsigned int owner) {
+bool DMABuffer::setBufferOwner(uint8_t owner) {
 
    std::string filename;
    std::fstream f;
@@ -210,7 +211,7 @@ bool DMABuffer::setBufferOwner(unsigned int owner) {
  * @return true: set sync mode success
  * @return false: set sync mode failure
  */
-bool DMABuffer::setSyncMode(unsigned int mode) {
+bool DMABuffer::setSyncMode(uint8_t mode) {
    std::string filename;
    std::fstream f;
 

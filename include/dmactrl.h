@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <cstdint>
 
 /**
  * @defgroup BD_GROUP Block descriptor registers
@@ -36,7 +37,7 @@
 class DMACtrl {
    
 public:
-   DMACtrl(unsigned int baseaddr);
+   DMACtrl(uint32_t baseaddr);
    ~DMACtrl(void);
 
    /**
@@ -50,8 +51,8 @@ public:
    };
 
    void setChannel(DMACtrl::Channel ch);
-   void setRegister(int offset, unsigned int value);
-   unsigned int getRegister(int offset);
+   void setRegister(uint8_t offset, uint32_t value);
+   uint32_t getRegister(uint8_t offset);
 
    void halt(void);
    void reset(void);
@@ -65,25 +66,25 @@ public:
    bool IRQioc(void);
    void clearIRQioc(void);
    
-   bool rx(unsigned int timeout = 0);
+   bool rx(uint32_t timeout = 0);
 
    /* Direct DMA methods */
-   void initDirect(unsigned int blocksize, unsigned int addr);
+   void initDirect(uint32_t blocksize, uint32_t addr);
 
    /* Scatter Gather DMA methods */
-   void initSG(unsigned int baseaddr, int n, unsigned int blocksize, unsigned int tgtaddr);
-   void incSGDescTable(int index);
+   void initSG(uint32_t baseaddr, uint8_t n, uint32_t blocksize, uint32_t tgtaddr);
+   void incSGDescTable(uint8_t index);
    void dumpSGDescTable(void);
    void dumpSGDescAllStatus(void);
    void clearSGDescAllStatus(void);
-   long int getSGDescBufferAddress(int desc);
+   uint32_t getSGDescBufferAddress(uint8_t desc);
 
-   unsigned int getBlockOffset(void);
-   unsigned int getBlockSize(void);
+   uint32_t getBlockOffset(void);
+   uint32_t getBlockSize(void);
 
 private:
 
-   std::map<std::string, unsigned int> mm2sRegs = { 
+   std::map<std::string, uint8_t> mm2sRegs = { 
       {"DMACR", 0x00}, 
       {"DMASR", 0x04},
       {"START_ADDRESS", 0x18},
@@ -91,7 +92,7 @@ private:
       {"CURDESC", 0x08},
       {"TAILDESC", 0x10} };
 
-   std::map<std::string, unsigned int> s2mmRegs = { 
+   std::map<std::string, uint8_t> s2mmRegs = { 
       {"DMACR", 0x30}, 
       {"DMASR", 0x34},
       {"DESTINATION_ADDRESS", 0x48},
@@ -99,38 +100,38 @@ private:
       {"CURDESC", 0x38},
       {"TAILDESC", 0x40} };
 
-   std::map<std::string, unsigned int> regs;
+   std::map<std::string, uint8_t> regs;
 
    DMACtrl::Channel channel = DMACtrl::Channel::UNKNOWN;
 
    int dh;
-   volatile unsigned int* mem;      // AXI-DMA controller
-   volatile unsigned int* bdmem;    // block descriptors memory (SG)
-   unsigned int size;
-   unsigned int descaddr;
-   unsigned int targetaddr;
-   unsigned int ndesc;
-   unsigned int blockOffset, blockSize;
-   unsigned int bdStartIndex, bdStopIndex;
-   unsigned int minWait, maxWait, curWait;
-   unsigned int minLoop, maxLoop;
-   unsigned int lastIrqThreshold;
+   volatile uint32_t* mem;      // AXI-DMA controller
+   volatile uint32_t* bdmem;    // block descriptors memory (SG)
+   uint32_t size;
+   uint32_t descaddr;
+   uint32_t targetaddr;
+   uint8_t ndesc;
+   uint32_t blockOffset, blockSize;
+   uint8_t bdStartIndex, bdStopIndex;
+   uint32_t minWait, maxWait, curWait;
+   uint16_t minLoop, maxLoop;
+   uint16_t lastIrqThreshold;
    bool initsg;
    bool blockTransfer, bufferTransfer;
 
-   void setMem(volatile unsigned int *mem_address, int offset, unsigned int value);
-   unsigned int getMem(volatile unsigned int *mem_address, int offset);
+   void setMem(volatile uint32_t *mem_address, uint32_t offset, uint32_t value);
+   uint32_t getMem(volatile uint32_t *mem_address, uint32_t offset);
    void initSGDescriptors(void);
-   void calibrateWaitTime(unsigned int count);
-   long int getBufferAddress(unsigned int desc);
+   void calibrateWaitTime(uint16_t count);
+   uint32_t getBufferAddress(uint8_t desc);
 
    /* Direct DMA methods */
    void runDirect(void);
-   bool directRx(unsigned int timeout);
+   bool directRx(uint32_t timeout = 0);
 
    /* Scatter Gather DMA methods */
    void runSG(void);
-   bool blockRx(unsigned int timeout = 0);
-   bool bufferRx(unsigned int timeout = 0);
+   bool blockRx(uint32_t timeout = 0);
+   bool bufferRx(uint32_t timeout = 0);
 };
 
