@@ -27,7 +27,7 @@ public:
    DMABuffer(void);
    ~DMABuffer(void);
 
-   uint16_t *buf;     ///< Buffer for data transfer
+   uint8_t *buf;     ///< Buffer for data transfer
 
    bool open(std::string bufname, bool cache_on);
    bool close(void);
