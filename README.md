@@ -4,6 +4,9 @@ The Xilinx LogiCORE IP AXI Direct Memory Access (AXI DMA) core is a soft Xilinx 
 
 This library provides C++ classes to handle DMA transfers. User DMA buffers implementation is based on udmabuf project (https://github.com/ikwzm/udmabuf)
 
+### Limitations
+- Only S2MM channel (PL -> PS) is implemented
+
 #### Example of S2MM (PL -> PS) DMA transfer in direct or scatter-gather mode:
 
 ```cpp
