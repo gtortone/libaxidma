@@ -1,8 +1,8 @@
-# AXI-DMA C/C++ library
+# AXI-DMA C++ library
 
 The Xilinx LogiCORE IP AXI Direct Memory Access (AXI DMA) core is a soft Xilinx IP core for use with the Xilinx Vivado Design Suite. The AXI DMA provides high-bandwidth direct memory access between memory and AXI4-Stream target peripherals. Its optional scatter/gather capabilities also offload data movement tasks from the Central Processing Unit (CPU).
 
-This library provides C/C++ classes to handle DMA transfers. User DMA buffers implementation is based on udmabuf project (https://github.com/ikwzm/udmabuf)
+This library provides C++ classes to handle DMA transfers. User DMA buffers implementation is based on udmabuf project (https://github.com/ikwzm/udmabuf)
 
 #### Example of S2MM (PL -> PS) DMA transfer in direct or scatter-gather mode:
 
