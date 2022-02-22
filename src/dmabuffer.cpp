@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <fmt/core.h>
 #include <sys/mman.h>
 
 #include "dmabuffer.h"
@@ -47,7 +46,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
    bool found = false;
    for (auto& dir : sys_class_path_list) {
 
-      std::string subdir = fmt::format("{0}/{1}", dir, bufname);
+      std::string subdir = std::string(dir) + "/" + std::string(bufname);
       std::filesystem::directory_entry entry(subdir.data());
       if(entry.is_directory()) {
          found = true;
@@ -65,7 +64,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
    std::fstream f;
    std::string line;
 
-   filename = fmt::format("{}/phys_addr", sys_class_path);
+   filename = sys_class_path + "/phys_addr";
    f.open(filename, std::fstream::in);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;
@@ -75,7 +74,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
    phys_addr = std::stoul(line, nullptr, 16);
    f.close();
 
-   filename = fmt::format("{}/size", sys_class_path);
+   filename = sys_class_path + "/size";
    f.open(filename, std::fstream::in);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;
@@ -85,7 +84,7 @@ bool DMABuffer::open(std::string bufname, bool cache_on) {
    buf_size = std::stoul(line);
    f.close();
 
-   filename = fmt::format("/dev/{}", name);
+   filename = "/dev/" + name;
    if((fd = ::open(filename.data(), O_RDWR | ((cache_on == 0)? O_SYNC : 0))) == -1) {
       std::cout << "E: can not open " << filename << std::endl;
       return false;
@@ -128,7 +127,7 @@ bool DMABuffer::setSyncArea(uint32_t offset, uint32_t size, uint8_t direction) {
    std::string filename;
    std::fstream f;
 
-   filename = fmt::format("{}/sync_offset", sys_class_path);
+   filename = sys_class_path + "/sync_offset";
    f.open(filename, std::fstream::out);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;
@@ -137,7 +136,7 @@ bool DMABuffer::setSyncArea(uint32_t offset, uint32_t size, uint8_t direction) {
    f << offset;
    f.close();
 
-   filename = fmt::format("{}/sync_size", sys_class_path);
+   filename = sys_class_path + "/sync_size";
    f.open(filename, std::fstream::out);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;
@@ -146,7 +145,7 @@ bool DMABuffer::setSyncArea(uint32_t offset, uint32_t size, uint8_t direction) {
    f << size;
    f.close();
 
-   filename = fmt::format("{}/sync_direction", sys_class_path);
+   filename = sys_class_path + "/sync_direction";
    f.open(filename, std::fstream::out);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;
@@ -172,9 +171,9 @@ bool DMABuffer::setBufferOwner(uint8_t owner) {
    std::fstream f;
 
    if(owner == CPU_OWNER) {
-      filename = fmt::format("{}/sync_for_cpu", sys_class_path);
+      filename = sys_class_path + "/sync_for_cpu";
    } else if(owner == DEVICE_OWNER) {
-      filename = fmt::format("{}/sync_for_device", sys_class_path);
+      filename = sys_class_path + "/sync_for_device";
    } else {
       std::cout << "E: owner not valid" << std::endl;
       return false;
@@ -218,7 +217,7 @@ bool DMABuffer::setSyncMode(uint8_t mode) {
    if(mode < 0 || mode > 7)
       return false;
 
-   filename = fmt::format("{}/sync_mode", sys_class_path);
+   filename = sys_class_path + "/sync_mode";
    f.open(filename, std::fstream::out);
    if(!f.is_open()) {
       std::cout << "E: can not open " << filename << std::endl;

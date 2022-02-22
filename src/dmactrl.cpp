@@ -1,11 +1,11 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <thread>
 #include <fcntl.h>
 #include <unistd.h>  // usleep
 #include <stdexcept>
 #include <sys/mman.h>
-#include <fmt/core.h>
 
 #include "dmactrl.h"
 
@@ -207,10 +207,14 @@ void DMACtrl::getStatus(void) {
 
    uint32_t status = getRegister(regs["DMASR"]);
 
+   std::ios::fmtflags f(std::cout.flags());
+   std::cout.setf(std::ios::hex, std::ios::basefield);  // set hex as the basefield
+   std::cout.setf(std::ios::showbase);                  // activate showbase
+
    if(channel == S2MM)
-      fmt::print("Stream to memory-mapped status (0x{:08x}@0x{:02x}): ", status, regs["DMACR"]);
+      std::cout << "Stream to memory-mapped status (" << status << "@" << regs["DMACR"] << "): ";
    else if(channel == MM2S)
-      fmt::print("Memory-mapped to stream status (0x{:08x}@0x{:02x}): ", status, regs["DMACR"]);
+      std::cout << "Memory-mapped to stream status (" << status << "@" << regs["DMACR"] << "): ";
 
    if (status & 0x00000001) std::cout << " halted"; else std::cout << " running";
    if (status & 0x00000002) std::cout << " idle";
@@ -224,9 +228,13 @@ void DMACtrl::getStatus(void) {
    if (status & 0x00001000) std::cout << " IOC_Irq";
    if (status & 0x00002000) std::cout << " Dly_Irq";
    if (status & 0x00004000) std::cout << " Err_Irq";
+
+   // restore ios:fmtflags
+   std::cout.flags(f);
+
    if(isSG()) {
       uint8_t nirq = (status & 0x00FF0000) >> 16;
-      std::cout << " IRQThresholdSts: " << nirq;
+      std::cout << " IRQThresholdSts: " << unsigned(nirq);
    }
 
    std::cout << std::endl;
@@ -438,8 +446,8 @@ void DMACtrl::dumpSGDescTable(void) {
       uint32_t buffer_address = getMem(bdmem, BUFFER_ADDRESS + (DESC_SIZE * i));
       uint32_t control =  getMem(bdmem, CONTROL + (DESC_SIZE * i));
       uint32_t status = getMem(bdmem, STATUS + (DESC_SIZE * i));
-      fmt::print("BD{}: addr {:04X} NXTDESC {:04X}, BUFFER_ADDRESS {:04X}, CONTROL {:04X}, STATUS {:04X}\n", \
-         i, bdaddr, nxtdesc, buffer_address, control, status);
+      std::cout << "BD" << i << ": addr " << std::hex << bdaddr << " NXTDESC " << nxtdesc << ", BUFFER_ADDRESS " << buffer_address << \
+         ", CONTROL " << control << " , STATUS " << status << std::dec << std::endl;
    }
 }
 
@@ -455,7 +463,7 @@ void DMACtrl::dumpSGDescAllStatus(void) {
 
    for(uint8_t i=0; i<ndesc; i++) {
       uint32_t status = getMem(bdmem, STATUS + (DESC_SIZE * i));
-      fmt::print("BD{}: STATUS {:04X}\n", i, status);
+      std::cout << "BD" << i << ": STATUS " << std::hex << status << std::dec << std::endl;
    }
 }
 
@@ -664,10 +672,11 @@ bool DMACtrl::blockRx(uint32_t timeout) {
          }
       }
       
-      /*
-      fmt::print("{}) irqThreshold: {}  lastIrqThreshold: {}  readyBlocks: {}  bdStartIndex: {}  bdStopIndex: {}\n", \
-         nloops, irqThreshold, lastIrqThreshold, readyBlocks, bdStartIndex, bdStopIndex);
-      */
+#ifdef DEBUG
+      std::cout << nloops << ") irqThreshold: " << irqThreshold << " lastIrqThreshold: " << lastIrqThreshold << \
+         " readyBlocks: " << unsigned(readyBlocks) << " bdStartIndex: " << unsigned(bdStartIndex) << \
+         " bdStopIndex: " << unsigned(bdStopIndex) << std::endl;
+#endif
 
       if(readyBlocks > 0) {
 
@@ -681,8 +690,8 @@ bool DMACtrl::blockRx(uint32_t timeout) {
          blockSize = size * (bdStopIndex - bdStartIndex + 1);
 
 #ifdef DEBUG
-         fmt::print("BDs ready from BD{} to BD{} - offset: {} size: {}\n", \
-            bdStartIndex, bdStopIndex, blockOffset, blockSize);
+         std::cout << "BDs ready from " << unsigned(bdStartIndex) << " to " << unsigned(bdStopIndex) << \
+            " - offset: " << blockOffset << " size: " << blockSize << std::endl;
 #endif
 
          if(bdStopIndex < (ndesc-1))

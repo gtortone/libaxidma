@@ -16,7 +16,3 @@ set(AXIDMA_INC_DIR PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_library(axidma STATIC ${SRC_FILES})
 target_include_directories(axidma PUBLIC ${AXIDMA_INC_DIR})
-
-find_package(fmt REQUIRED)
-target_link_libraries(axidma PUBLIC fmt::fmt)
-
